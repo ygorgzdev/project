@@ -3,77 +3,61 @@ const router = express.Router();
 const { authPage } = require('../middleware/auth');
 const { register, login } = require('../controllers/authController');
 
-// Página inicial
-router.get('/', (req, res) => {
-  res.render('index', { 
-    title: 'IncubePro - Conectando Desenvolvedores e Investidores' 
-  });
-});
+// Como o frontend é Svelte, backend não vai renderizar páginas, só API e redirecionamento
 
-// Página de login
-router.get('/login', (req, res) => {
-  const registered = req.query.registered === 'true';
-  res.render('login', { 
-    title: 'Login - IncubePro',
-    registered,
-    error: req.query.error === 'expired' ? 'Sua sessão expirou. Por favor, faça login novamente.' : null
-  });
-});
-
-// Processar formulário de login
+// Rota de login (processa formulário via POST)
 router.post('/login', login);
 
-// Página de registro
-router.get('/register', (req, res) => {
-  // Pegar o papel (role) da query string, se existir
-  const role = req.query.role || 'developer';
-  res.render('register', { 
-    title: 'Registro - IncubePro',
-    role
-  });
-});
-
-// Processar formulário de registro
+// Rota de registro (processa formulário via POST)
 router.post('/register', register);
 
-// Logout
+// Logout - limpa cookie e redireciona para frontend
 router.get('/logout', (req, res) => {
   res.clearCookie('token');
+  // Redireciona para rota de login do frontend (ex: Svelte app)
   res.redirect('/login');
 });
 
-// Rota para visualizar todos os projetos
-router.get('/projects', (req, res) => {
-  res.render('projects', { 
-    title: 'Projetos - IncubePro' 
-  });
-});
+// Rotas protegidas e outras que precisam verificar autenticação, podem retornar JSON
 
-// IMPORTANTE: Rotas específicas ANTES da rota com parâmetro dinâmico (:id)
-// Rota para criar novo projeto (protegida)
-router.get('/projects/new', authPage, (req, res) => {
-  // Verificar se o usuário é developer
-  if (req.user.role !== 'developer') {
-    return res.redirect('/');
-  }
-  
-  res.render('new-project', {
-    title: 'Criar Novo Projeto - IncubePro'
-  });
-});
-
-// Rota para detalhes de um projeto específico
-router.get('/projects/:id', (req, res) => {
-  res.render('project-detail', {
-    title: 'Detalhes do Projeto - IncubePro',
-    projectId: req.params.id
-  });
-});
-
-// Rota para perfil do usuário (protegida)
+// Exemplo de rota protegida para perfil do usuário
 router.get('/profile', authPage, (req, res) => {
-  res.render('profile', {
-    title: 'Meu Perfil - IncubePro'
+  // Retorna dados do usuário logado para o frontend consumir
+  res.json({
+    username: req.user.username,
+    role: req.user.role,
+    email: req.user.email
+    // outros dados que queira enviar
+  });
+});
+
+// Rota para listar projetos (retorna JSON)
+router.get('/projects', (req, res) => {
+  // Aqui você deve buscar os projetos no banco e enviar JSON
+  // Exemplo estático para você substituir:
+  res.json([
+    { id: 1, title: 'Projeto A', description: 'Descrição do projeto A' },
+    { id: 2, title: 'Projeto B', description: 'Descrição do projeto B' }
+  ]);
+});
+
+// Rota para criar novo projeto (exemplo, protegida)
+router.post('/projects/new', authPage, (req, res) => {
+  if (req.user.role !== 'developer') {
+    return res.status(403).json({ msg: 'Acesso negado: somente developers podem criar projetos.' });
+  }
+  // Aqui insira lógica para salvar projeto no banco e retornar resultado
+  res.json({ msg: 'Projeto criado com sucesso!' });
+});
+
+// Rota para detalhes do projeto (retorna JSON)
+router.get('/projects/:id', (req, res) => {
+  const projectId = req.params.id;
+  // Buscar projeto no banco pelo projectId e retornar JSON
+  res.json({
+    id: projectId,
+    title: `Projeto ${projectId}`,
+    description: `Descrição detalhada do projeto ${projectId}`
   });
 });
 

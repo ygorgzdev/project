@@ -13,20 +13,20 @@ exports.getProfile = async (req, res) => {
 exports.updateProfile = async (req, res) => {
   try {
     const { name, bio, skills } = req.body;
-    
+
     // Campos atualizáveis
     const updateFields = {};
     if (name) updateFields.name = name;
     if (bio) updateFields.bio = bio;
     if (skills) updateFields.skills = skills;
-    
+
     // Atualizar o perfil do usuário
     const updatedUser = await User.findByIdAndUpdate(
       req.user.id,
       { $set: updateFields },
       { new: true }
     ).select('-password');
-    
+
     res.json(updatedUser);
   } catch (err) {
     console.error('Erro ao atualizar perfil:', err);
