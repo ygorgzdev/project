@@ -11,7 +11,6 @@ const configSecurity = require('./config/security');
 const authRoutes = require('./routes/auth');
 const userRoutes = require('./routes/users');
 const projectRoutes = require('./routes/projects');
-const pageRoutes = require('./routes/pages');
 
 // Carrega variáveis de ambiente
 dotenv.config();
@@ -58,11 +57,8 @@ app.use((err, req, res, next) => {
   next(err);
 });
 
-// Configurar EJS para renderização de páginas
-app.set('view engine', 'ejs');
-app.set('views', path.join(__dirname, 'views'));
-
-// Servir arquivos estáticos
+// Servir arquivos estáticos (para produção, quando o Svelte for construído)
+// Na produção, o Svelte compilado pode ser servido a partir daqui
 app.use(express.static(path.join(__dirname, 'public')));
 
 // Rotas da API
@@ -79,31 +75,27 @@ app.get('/api/health', (req, res) => {
   });
 });
 
-// Rotas de página
-app.use('/', pageRoutes);
-
 // Middleware para lidar com rotas não encontradas
 app.use('/api/*', (req, res) => {
   res.status(404).json({ msg: 'Endpoint não encontrado' });
+});
+
+// Para suportar SPA como Svelte, redirecionar todas as outras requisições para o frontend
+// Isto permite que o router do Svelte gerencie as rotas no lado do cliente
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
 // Middleware para erros globais
 app.use((err, req, res, next) => {
   console.error('Erro global:', err);
 
-  // Verificar se é uma resposta de API ou página
-  if (req.originalUrl.startsWith('/api')) {
-    const statusCode = err.statusCode || 500;
-    const message = err.message || 'Erro interno do servidor';
+  const statusCode = err.statusCode || 500;
+  const message = err.message || 'Erro interno do servidor';
 
-    return res.status(statusCode).json({
-      msg: message,
-      stack: process.env.NODE_ENV === 'development' ? err.stack : undefined
-    });
-  }
-
-  res.status(500).json({
-    msg: 'Erro interno do servidor. Tente novamente mais tarde.'
+  return res.status(statusCode).json({
+    msg: message,
+    stack: process.env.NODE_ENV === 'development' ? err.stack : undefined
   });
 });
 

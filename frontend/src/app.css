@@ -1,3 +1,4 @@
+/* src/app.css */
 @import 'tailwindcss';
 @plugin '@tailwindcss/forms';
 @plugin '@tailwindcss/typography';

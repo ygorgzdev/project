@@ -1,7 +1,10 @@
+<!-- src/routes/+layout.svelte -->
 <script lang="ts">
 	import '../app.css';
 
 	let { children } = $props();
 </script>
 
-{@render children()}
+<div class="flex min-h-screen flex-col">
+	{@render children()}
+</div>
